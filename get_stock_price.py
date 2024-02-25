@@ -14,7 +14,7 @@ import shutil
 import os
 from lxml import etree
 
-from general_helpers import is_number
+from general_helpers import is_number, convert_cap_value
 
 
 def get_historic_data(stock_id,verbose):
@@ -80,16 +80,25 @@ def get_current_data(stock_id,verbose):
         # read tabular data
         table_block = soup.find('div',id='quote-summary')
         table = table_block.find('table')
+        # previous close
         prev_close_field = table.find('td',attrs = {"data-test":'PREV_CLOSE-value'})
         if prev_close_field:
             if is_number(prev_close_field.text):
                 prev_close = float(prev_close_field.text)
+        # volume
         volume_field = table.find('fin-streamer',attrs={"data-field":'regularMarketVolume'})
         if volume_field:
             if is_number(volume_field.text.replace(',','')):
                 volume = float(volume_field.text.replace(',',''))
-                print(f'volume:{volume}')
-    return full_name, curreny, current_price, volume, market_cap, prev_close, market, currency 
+        # market cap (2nd table)
+        table_block_2 = soup.find('div',attrs={'data-test':'right-summary-table'})
+        table_2 = table_block_2.find('table')#,class_='W(100%) M(0) Bdcl(c)')
+        cap_field = table_2.find('td', attrs={'data-test':'MARKET_CAP-value'})
+        print(cap_field.text)
+        if cap_field:
+            market_cap = convert_cap_value(cap_field.text)
+            
+    return full_name, currency, current_price, volume, market_cap, prev_close, market 
 
 
 def getCurrentDataPerStock_sel(stock_id,verbose):
