@@ -1,2 +1,4 @@
 slides.pptx
 test_environment.ipynb
+.ipynb_checkpoints
+__pycache__

@@ -47,15 +47,42 @@ def get_current_data(stock_id,verbose):
         -market_cap: float; current market cap of the stock
     """
     url = f'https://finance.yahoo.com/quote/{stock_id}'
+    if verbose:
+        print(f'*** retrieving stock data from {url}')
     full_name, curreny, current_price, volume, market_cap = np.nan, np.nan, np.nan, np.nan, np.nan
     r = requests.get(url)
     if r.status_code == 200:
         soup = BeautifulSoup(r.text,"html.parser")
+        
+        # read current price
         price_field = soup.find('fin-streamer', class_='Fw(b) Fz(36px) Mb(-4px) D(ib)')
         if price_field:
-           price = price_field.text
-            print(price)
-    return full_name, curreny, current_price, volume, market_cap
+            if is_number(price_field.text.strip()):
+                current_price = float(price_field.text)
+        
+        # read current date
+        close_field = soup.find('div', id='quote-market-notice', class_="C($tertiaryColor) D(b) Fz(12px) Fw(n) Mstart(0)--mobpsm Mt(6px)--mobpsm Whs(n)")
+        close = close_field.find('span').text
+    
+        # read name
+        name_field = soup.find('div',class_='Mt(15px) D(f) Pos(r)')
+        full_name = name_field.find('h1').text
+
+        # read market and curreny
+        market_field = soup.find('div',class_='C($tertiaryColor) Fz(12px)')
+        market_currency = market_field.find('span').text
+        print(market_currency)
+
+
+        # read tabular data
+        table_block = soup.find('div',id='quote-summary')
+        table = table_block.find('table')
+        prev_close_field = table.find('td',attrs = {"data-test":'PREV_CLOSE-value'}).text
+        if is_number(prev_close_field):
+            prev_close = prev_close_field
+
+
+    return full_name, curreny, current_price, volume, market_cap, prev_close
 
 
 def getCurrentDataPerStock_sel(stock_id,verbose):
