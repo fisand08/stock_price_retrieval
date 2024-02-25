@@ -46,7 +46,7 @@ def get_current_data(stock_id,verbose):
         -volume: float; current volume of the stock
         -market_cap: float; current market cap of the stock
     """
-    url = f'https://finance.yahoo.com/quote/{stock_id}'
+    url = f'https://finance.yahoo.com/quote/{stock_id}/?p={stock_id}'
     if verbose:
         print(f'*** retrieving stock data from {url}')
     full_name, currency, current_price, volume, market_cap, prev_close, market, dividend_value, dividend_percent = np.nan, np.nan, np.nan, np.nan, np.nan,np.nan,np.nan,np.nan,np.nan
