@@ -11,6 +11,7 @@ Toolbox for stock market tools
 #### Stock data retriever
 
 * Retrieves historic data for stocks
+* Keeps stock data up to date
 
 ## Getting Started
 
