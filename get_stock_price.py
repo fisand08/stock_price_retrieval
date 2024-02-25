@@ -94,7 +94,6 @@ def get_current_data(stock_id,verbose):
         table_block_2 = soup.find('div',attrs={'data-test':'right-summary-table'})
         table_2 = table_block_2.find('table')#,class_='W(100%) M(0) Bdcl(c)')
         cap_field = table_2.find('td', attrs={'data-test':'MARKET_CAP-value'})
-        print(cap_field.text)
         if cap_field:
             market_cap = convert_cap_value(cap_field.text)
             
