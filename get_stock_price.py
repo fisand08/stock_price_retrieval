@@ -49,13 +49,13 @@ def get_current_data(stock_id,verbose):
     url = f'https://finance.yahoo.com/quote/{stock_id}'
     if verbose:
         print(f'*** retrieving stock data from {url}')
-    full_name, curreny, current_price, volume, market_cap = np.nan, np.nan, np.nan, np.nan, np.nan
+    full_name, currency, current_price, volume, market_cap, prev_close, market, dividend_value, dividend_percent = np.nan, np.nan, np.nan, np.nan, np.nan,np.nan,np.nan,np.nan,np.nan
     r = requests.get(url)
     if r.status_code == 200:
         soup = BeautifulSoup(r.text,"html.parser")
         
         # read current price
-        price_field = soup.find('fin-streamer', class_='Fw(b) Fz(36px) Mb(-4px) D(ib)')
+        price_field = soup.find('fin-streamer', attrs={'data-field':'regularMarketPrice'})
         if price_field:
             if is_number(price_field.text.strip()):
                 current_price = float(price_field.text)
@@ -75,8 +75,6 @@ def get_current_data(stock_id,verbose):
             market = market_currency.split('-')[0]
             currency = market_currency.split()[-1]
 
-
-
         # read tabular data
         table_block = soup.find('div',id='quote-summary')
         table = table_block.find('table')
@@ -90,14 +88,26 @@ def get_current_data(stock_id,verbose):
         if volume_field:
             if is_number(volume_field.text.replace(',','')):
                 volume = float(volume_field.text.replace(',',''))
-        # market cap (2nd table)
+        
+        # read table (2nd table)
         table_block_2 = soup.find('div',attrs={'data-test':'right-summary-table'})
         table_2 = table_block_2.find('table')#,class_='W(100%) M(0) Bdcl(c)')
+        # market cap
         cap_field = table_2.find('td', attrs={'data-test':'MARKET_CAP-value'})
         if cap_field:
             market_cap = convert_cap_value(cap_field.text)
-            
-    return full_name, currency, current_price, volume, market_cap, prev_close, market 
+        # dividend
+        dividend_field = table_2.find('td',attrs={'data-test':'DIVIDEND_AND_YIELD-value'})
+        if dividend_field:
+            if len(dividend_field.text.split()) > 1:
+                d1 = dividend_field.text.split()[0]
+                d2 = dividend_field.text.split()[1].replace('(','').replace(')','')
+                if is_number(d1):
+                    dividend_value = float(d1)
+                if is_number(d2[:-1]) and '%' in d2:
+                    dividend_percent = float(d2[:-1])
+
+    return full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent
 
 
 def getCurrentDataPerStock_sel(stock_id,verbose):
