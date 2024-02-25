@@ -71,18 +71,25 @@ def get_current_data(stock_id,verbose):
         # read market and curreny
         market_field = soup.find('div',class_='C($tertiaryColor) Fz(12px)')
         market_currency = market_field.find('span').text
-        print(market_currency)
+        if 'Currency' in market_currency:
+            market = market_currency.split('-')[0]
+            currency = market_currency.split()[-1]
+
 
 
         # read tabular data
         table_block = soup.find('div',id='quote-summary')
         table = table_block.find('table')
-        prev_close_field = table.find('td',attrs = {"data-test":'PREV_CLOSE-value'}).text
-        if is_number(prev_close_field):
-            prev_close = prev_close_field
-
-
-    return full_name, curreny, current_price, volume, market_cap, prev_close
+        prev_close_field = table.find('td',attrs = {"data-test":'PREV_CLOSE-value'})
+        if prev_close_field:
+            if is_number(prev_close_field.text):
+                prev_close = float(prev_close_field.text)
+        volume_field = table.find('fin-streamer',attrs={"data-field":'regularMarketVolume'})
+        if volume_field:
+            if is_number(volume_field.text.replace(',','')):
+                volume = float(volume_field.text.replace(',',''))
+                print(f'volume:{volume}')
+    return full_name, curreny, current_price, volume, market_cap, prev_close, market, currency 
 
 
 def getCurrentDataPerStock_sel(stock_id,verbose):
