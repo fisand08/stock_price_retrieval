@@ -12,6 +12,50 @@ from selenium.webdriver.common.by import By
 import time
 import shutil
 import os
+from lxml import etree
+
+from general_helpers import is_number
+
+
+def get_historic_data(stock_id,verbose):
+    """
+    desc
+
+    inputs:
+        - x: ;
+    outputs:
+        - x: ;
+
+    """
+    pass
+
+def get_current_data(stock_id,verbose):
+    """
+    uses requests and bs4 to get from yahoo finance summary:
+        -up-to-date current stock information
+        -general informaton on stock
+    
+    inputs: 
+        -stock_id: string; ID of the stock, e.g. NVS for novartis
+        -verbose: bool; if additional information is printed
+
+    outputs:
+        -currency: string; currency in which the stock is traded in
+        -full_name: string; full name of the stock
+        -current_price: float; current price of the stock
+        -volume: float; current volume of the stock
+        -market_cap: float; current market cap of the stock
+    """
+    url = f'https://finance.yahoo.com/quote/{stock_id}'
+    full_name, curreny, current_price, volume, market_cap = np.nan, np.nan, np.nan, np.nan, np.nan
+    r = requests.get(url)
+    if r.status_code == 200:
+        soup = BeautifulSoup(r.text,"html.parser")
+        price_field = soup.find('fin-streamer', class_='Fw(b) Fz(36px) Mb(-4px) D(ib)')
+        if price_field:
+           price = price_field.text
+            print(price)
+    return full_name, curreny, current_price, volume, market_cap
 
 
 def getCurrentDataPerStock_sel(stock_id,verbose):
