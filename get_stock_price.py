@@ -17,18 +17,47 @@ from lxml import etree
 from general_helpers import is_number, convert_cap_value
 
 
-def get_historic_data(stock_id,verbose):
-    """
-    desc
 
-    inputs:
-        - x: ;
-    outputs:
-        - x: ;
+def get_historic_data(stock_id, verbose):
+    
+    url = 'https://finance.yahoo.com/quote/' + stock_id + '/history?p=' + stock_id
 
-    """
-    pass
+    if verbose:
+        print(f'*** Fetching historic data from {url}')
 
+    s=Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=s)
+    driver.implicitly_wait(5)
+    driver.get(url)
+    
+    # Press button
+    try:
+        time.sleep(1)
+        buttons = driver.find_elements(By.TAG_NAME,'button')[0].click()
+    except Exception as e:
+        if verbose:
+            print(f'ERROR: ({e})')
+        
+    # Add all time
+    #driver.find_element(By.XPATH, '//div[@data-test="dropdown"]').click()
+    #driver.find_element(By.XPATH, '//div[@class_="Pos(r) D(ib) Va(m) Mstart(8px)"').click()
+    #driver.find_element(By.XPATH,'//div[@role="button"]').click()
+    #driver.find_element(By.XPATH,'//svg[@data-icon="CoreArrowDown"]').click()
+    dropdown_block = driver.find_element(By.XPATH,'//div[@class="M(0) O(n):f D(ib) Bd(0) dateRangeBtn O(n):f Pos(r)"]')
+    print(f'dropdown text:{dropdown_block.text}')
+    divs = dropdown_block.find_elements(By.TAG_NAME,'div')
+    for d in divs:
+        d.click()
+
+    WebDriverWait(driver,10).until(EC.element_to_be_clickable((By.XPATH, '//button[@data-value="MAX"]'))).click()
+    time.sleep(0.5)
+    hyperlinks = driver.find_element(By.TAG_NAME, 'a')
+    for l in hyperlinks:
+        l_text = l.get_attribute('href')
+        if 'download' in l_text and 'history' in l_text and 'query' in l_text:
+            data_url = l_text
+            print(f'URL for dataframe: {data_url}')
+    
 def get_current_data(stock_id,verbose):
     """
     uses requests and bs4 to get from yahoo finance summary:
@@ -51,11 +80,13 @@ def get_current_data(stock_id,verbose):
         print(f'*** retrieving stock data from {url}')
     full_name, currency, current_price, volume, market_cap, prev_close, market, dividend_value, dividend_percent = np.nan, np.nan, np.nan, np.nan, np.nan,np.nan,np.nan,np.nan,np.nan
     r = requests.get(url)
+    if verbose:
+        print(f'Status:{r.status_code}')
     if r.status_code == 200:
         soup = BeautifulSoup(r.text,"html.parser")
         
         # read current price
-        price_field = soup.find('fin-streamer', attrs={'data-field':'regularMarketPrice'})
+        price_field = soup.find('fin-streamer', class_='Fw(b) Fz(36px) Mb(-4px) D(ib)')# attrs={'data-field':'regularMarketPrice'})
         if price_field:
             if is_number(price_field.text.strip()):
                 current_price = float(price_field.text)
