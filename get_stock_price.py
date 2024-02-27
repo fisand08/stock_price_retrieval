@@ -39,25 +39,25 @@ def get_historic_data(stock_id, verbose):
             print(f'ERROR: ({e})')
         
     # Add all time
-    #driver.find_element(By.XPATH, '//div[@data-test="dropdown"]').click()
-    #driver.find_element(By.XPATH, '//div[@class_="Pos(r) D(ib) Va(m) Mstart(8px)"').click()
-    #driver.find_element(By.XPATH,'//div[@role="button"]').click()
-    #driver.find_element(By.XPATH,'//svg[@data-icon="CoreArrowDown"]').click()
     dropdown_block = driver.find_element(By.XPATH,'//div[@class="M(0) O(n):f D(ib) Bd(0) dateRangeBtn O(n):f Pos(r)"]')
-    print(f'dropdown text:{dropdown_block.text}')
     divs = dropdown_block.find_elements(By.TAG_NAME,'div')
     for d in divs:
         d.click()
 
     WebDriverWait(driver,10).until(EC.element_to_be_clickable((By.XPATH, '//button[@data-value="MAX"]'))).click()
     time.sleep(0.5)
-    hyperlinks = driver.find_element(By.TAG_NAME, 'a')
+    hyperlinks = driver.find_elements(By.TAG_NAME, 'a')
     for l in hyperlinks:
         l_text = l.get_attribute('href')
         if 'download' in l_text and 'history' in l_text and 'query' in l_text:
-            data_url = l_text
+            data_url = str(l_text)
             print(f'URL for dataframe: {data_url}')
-    
+    if data_url:
+        print(f'Reading data url: {data_url}')
+        df = pd.read_csv(data_url)
+        print(df.head())
+
+
 def get_current_data(stock_id,verbose):
     """
     uses requests and bs4 to get from yahoo finance summary:
@@ -141,112 +141,6 @@ def get_current_data(stock_id,verbose):
     return full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent
 
 
-def getCurrentDataPerStock_sel(stock_id,verbose):
-    
-    price = np.nan
-    volume = np.nan
-    url = 'https://www.finance.yahoo.com/quote/' + stock_id + '?p=' + stock_id
-    if verbose:
-        print('Fetching data from ' + url)
-    s=Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=s)
-    driver.implicitly_wait(5)
-    driver.get(url)
-    
-    # Press button
-    button = True
-    if button:
-        time.sleep(1)
-        buttons = driver.find_elements(By.TAG_NAME,'button')[-1].click()
-        
-    # get current price
-    price_labels = driver.find_elements(By.XPATH,'//fin-streamer[@data-field="regularMarketPrice"]')
-    price_label = price_labels[6]
-    print('Price=' + price_label.text)
-    current_price = float((price_label.text).replace(',',''))
-
-    # get volume
-    tables = driver.find_elements(By.TAG_NAME,'td')
-    table = tables[13]
-    volume = float( (table.text).replace(',','') )
-    
-    return current_price, volume
-
-
-def getCurrentDataPerStock(stock_id,verbose):
-    #stock_id = stock_id.lower()
-    stock_id = stock_id.replace('.','.')
-    current_price = np.nan
-    volume = np.nan
-    url = 'https://finance.yahoo.com/quote/' + stock_id + '?p=' + stock_id + '&.tsrc=fin-srch'
-    url = 'https://www.finance.yahoo.com/quote/' + stock_id + '?p=' + stock_id
-    #url = url + '/'
-    #https://finance.yahoo.com/quote/ROG.SW?p=ROG.SW&.tsrc=fin-srch
-    #url = 'https://finance.yahoo.com/quote/' + stock_id
-    
-    
-    url = url.strip()
-    if verbose:
-        print(5*'\n' + 'Fetching data from ' + url)
-    r = requests.get(url)
-    status = r.status_code
-    if str(status) == '200':
-            
-        if verbose:
-            print('Visit successful w requests')
-        
-        soup = BeautifulSoup(r.content, 'html.parser')
-        
-        # get stock price
-        s = soup.find('div', class_='D(ib) Mend(20px)')
-        content = s.find_all('fin-streamer')
-        current_price = float((content[0].text).replace(',',''))
-        
-        # get additional data
-        s = soup.find('table', class_="W(100%)")
-        content = s.find_all('tr')
-        for en, field in enumerate(content):
-            ftext = field.text
-            # Volume
-            if 'Volume' in ftext and not 'Avg' in ftext:
-                volume = float((ftext).replace('Volume','').replace(',',''))
-    
-    else:
-        if verbose:
-            print('Using Selenium instead')
-        current_price,volume = getCurrentDataPerStock_sel(stock_id,verbose)
-    
-    
-    return current_price, volume
-    
-
-def getHistoricDataFile(stock_id, verbose):
-    url = 'https://finance.yahoo.com/quote/' + stock_id + '/history?p=' + stock_id
-
-    if verbose:
-        print('Fetching historic data from ' + url)
-
-    s=Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=s)
-    driver.implicitly_wait(5)
-    driver.get(url)
-    
-    # Press button
-    button = True
-    if button:
-        time.sleep(1)
-        buttons = driver.find_elements(By.TAG_NAME,'button')[-1].click()
-        
-        
-    # get all hyperlinks
-    hlinks = driver.find_elements(By.TAG_NAME,'a')
-    for hl in hlinks:
-        href = hl.get_attribute('href')
-        if 'query1' in href and 'download' in href and 'period' in href:
-            print(href)
-            df_hist = pd.read_csv(href)
-    return df_hist
-    
 def preprocessHistoricData(df_historic):
     return df_historic
 
