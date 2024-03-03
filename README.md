@@ -19,6 +19,11 @@ Toolbox for stock market tools
 ### Dependencies
 
 * pandas 
+* selenium
+* lxml
+* bs4
+* numpy
+* requests
 
 ### Executing program
 
