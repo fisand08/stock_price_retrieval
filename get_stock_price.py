@@ -16,22 +16,51 @@ from lxml import etree
 from general_helpers import is_number, convert_cap_value
 
 """
-- fix error message when fetching historic data
+- concept
 """
+
+def read_stock_inputs():
+    """
+    description:
+        - reads input file to list of stocks
+    inputs:
+        - x
+    outputs:
+        - x
+    """
+    pass
+
+def process_stocks(stock_list,vebose):
+    """
+    description:
+        -x
+    inputs:
+        - x
+    outputs:
+        -x 
+    """
+    for stock in stock_list:
+        x = fetch_stock(stock_id,verbose)
 
 def fetch_stock(stock_id, verbose):
     """
     Description:
-        - gets current and historic data for a stock
+        - stock data handler
+            - gets current and historic data for a stock
     Inputs:
         - stock id: str; identifier of stock at yahoo finance
         - verbose: bool; flag if additional output is printed
     Outputs:
 
     """
-    print(f'*** processing stock {stock_id}***')
+    print(f'\n*** processing stock {stock_id}***')
+    # historic data
     df_history = get_historic_data(stock_id, verbose)
     full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
+
+    if verbose:
+        print(df_history.head())
+        print(full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent)
 
     return True
 
