@@ -13,13 +13,32 @@ import time
 import shutil
 import os
 from lxml import etree
-
 from general_helpers import is_number, convert_cap_value
 
+def fetch_stock(stock_id, verbose):
+    """
+    Description:
+        - gets current and historic data for a stock
+    Inputs:
+        - stock id: str; identifier of stock at yahoo finance
+        - verbose: bool; flag if additional output is printed
+    Outputs:
+
+    """
+    df_history = get_historic_data(stock_id, verbose)
+    full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
+
+    return True
 
 
 def get_historic_data(stock_id, verbose):
-    
+    """
+    Description:
+        - gets current and historic data for a stock
+    Inputs:
+        - stock id: str; identifier of stock at yahoo finance
+        - verbose: bool; flag if additional output is printed
+    """
     url = 'https://finance.yahoo.com/quote/' + stock_id + '/history?p=' + stock_id
 
     if verbose:
@@ -51,18 +70,19 @@ def get_historic_data(stock_id, verbose):
         l_text = l.get_attribute('href')
         if 'download' in l_text and 'history' in l_text and 'query' in l_text:
             data_url = str(l_text)
-            print(f'URL for dataframe: {data_url}')
+            #print(f'URL for dataframe: {data_url}')
     if data_url:
-        print(f'Reading data url: {data_url}')
+        #print(f'Reading data url: {data_url}')
         df = pd.read_csv(data_url)
-        print(df.head())
-
+        #print(df.head())
+    return df
 
 def get_current_data(stock_id,verbose):
     """
-    uses requests and bs4 to get from yahoo finance summary:
-        -up-to-date current stock information
-        -general informaton on stock
+    description:
+        - uses requests and bs4 to get from yahoo finance summary:
+            -up-to-date current stock information
+            -general informaton on stock
     
     inputs: 
         -stock_id: string; ID of the stock, e.g. NVS for novartis
@@ -77,7 +97,7 @@ def get_current_data(stock_id,verbose):
     """
     url = f'https://finance.yahoo.com/quote/{stock_id}/?p={stock_id}'
     if verbose:
-        print(f'*** retrieving stock data from {url}')
+        print(f'*** retrieving current stock data from {url}')
     full_name, currency, current_price, volume, market_cap, prev_close, market, dividend_value, dividend_percent = np.nan, np.nan, np.nan, np.nan, np.nan,np.nan,np.nan,np.nan,np.nan
     r = requests.get(url)
     if verbose:
