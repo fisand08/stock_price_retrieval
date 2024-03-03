@@ -19,18 +19,7 @@ from general_helpers import is_number, convert_cap_value
 - concept
 """
 
-def read_stock_inputs():
-    """
-    description:
-        - reads input file to list of stocks
-    inputs:
-        - x
-    outputs:
-        - x
-    """
-    pass
-
-def process_stocks(stock_list,vebose):
+def process_stocks(stock_input_file, vebose):
     """
     description:
         -x
@@ -39,6 +28,7 @@ def process_stocks(stock_list,vebose):
     outputs:
         -x 
     """
+    stock_list =  open(stock_input_file,'r').read().split('\n')
     for stock in stock_list:
         x = fetch_stock(stock_id,verbose)
 
