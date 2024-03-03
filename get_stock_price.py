@@ -15,6 +15,10 @@ import os
 from lxml import etree
 from general_helpers import is_number, convert_cap_value
 
+"""
+- fix error message when fetching historic data
+"""
+
 def fetch_stock(stock_id, verbose):
     """
     Description:
@@ -25,6 +29,7 @@ def fetch_stock(stock_id, verbose):
     Outputs:
 
     """
+    print(f'*** processing stock {stock_id}***')
     df_history = get_historic_data(stock_id, verbose)
     full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
 
@@ -55,7 +60,8 @@ def get_historic_data(stock_id, verbose):
         buttons = driver.find_elements(By.TAG_NAME,'button')[0].click()
     except Exception as e:
         if verbose:
-            print(f'ERROR: ({e})')
+            if not 'element not interactable' in str(e): # only print if not typical error
+                print(f'ERROR: ({e})')
         
     # Add all time
     dropdown_block = driver.find_element(By.XPATH,'//div[@class="M(0) O(n):f D(ib) Bd(0) dateRangeBtn O(n):f Pos(r)"]')
@@ -70,7 +76,7 @@ def get_historic_data(stock_id, verbose):
         l_text = l.get_attribute('href')
         if 'download' in l_text and 'history' in l_text and 'query' in l_text:
             data_url = str(l_text)
-            #print(f'URL for dataframe: {data_url}')
+            #print(f' dataframe: {data_url}')
     if data_url:
         #print(f'Reading data url: {data_url}')
         df = pd.read_csv(data_url)
