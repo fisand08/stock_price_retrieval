@@ -19,33 +19,37 @@ from general_helpers import is_number, convert_cap_value
 - handler function - referesh daily stock data every 24h at end of market
 - store history upon first starting progam - make it somehow to run it perpetually
 - keep inout flexible
-
 """
+
 def handler():
     """
-
+    description:
+        - function that is "alive" - schedules everything
+    
+    dev:
+        - needs to be alive and read stock list (for the case new stocks are added to be observed - listener)
     """
     
+    # read inputs
+    stock_list =  open(stock_input_file,'r').read().split('\n')
+
+    # read key information for all stocks that were requested
+
+
     # time table: zurich time for market closing 
     market_times = {
         'SWISS':'',
         'NYC':'',
 
-
     }
 
-def process_stocks(stock_input_file, verbose):
-    """
-    description:
-        -x
-    inputs:
-        - x
-    outputs:
-        -x 
-    """
-    stock_list =  open(stock_input_file,'r').read().split('\n')
-    for stock_id in stock_list:
-        x = fetch_stock(stock_id, verbose)
+
+    # fetch historic data for every stock
+
+    # after historic data is stored, keep account of time and update historic data with current market data
+    #while True:
+    if True:
+        pass
 
 def fetch_stock(stock_id, verbose):
     """
@@ -199,41 +203,3 @@ def get_current_data(stock_id,verbose):
                     dividend_percent = float(d2[:-1])
 
     return full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent
-
-
-def preprocessHistoricData(df_historic):
-    return df_historic
-
-def updateHistoricData(stock_id, df_history):
-    pass
-
-def readMonitor(xlsx_file):
-    df_stock = pd.read_excel('Stocks_Monitored2.xlsx')
-    #print(df_stock.head())
-    return df_stock
-    
-def monitorStocks(df_stock, verbose):
-    for j in list(df_stock.index):
-        stock_id = df_stock.loc[j,'STOCK_NAME']
-        
-        current_price, volume = getCurrentDataPerStock(stock_id,verbose)
-        df_stock.loc[j,'PRICE'] = current_price
-        df_stock.loc[j,'VOLUME'] = volume        
-    return df_stock
-    
-def getHistoricData(df_stock,verbose):
-    try:
-        os.mkdir('Historic_Data')
-    except:
-        print('Directory "Historic_Data" already exists')
-        
-    for j in list(df_stock.index):
-        stock_id = df_stock.loc[j,'STOCK_NAME']
-        df_historic = getHistoricDataFile(stock_id, verbose)
-        df_historic = preprocessHistoricData(df_historic)
-        df_historic.to_csv(stock_id + '_history.csv',index=False)
-        p1 = os.path.join( os.getcwd(), stock_id + '_history.csv')
-        p2 = os.path.join( os.getcwd(), 'Historic_Data', stock_id + '_history.csv')
-        shutil.move( p1,p2)
-        
-    return True
