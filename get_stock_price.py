@@ -16,10 +16,25 @@ from lxml import etree
 from general_helpers import is_number, convert_cap_value
 
 """
-- concept
-"""
+- handler function - referesh daily stock data every 24h at end of market
+- store history upon first starting progam - make it somehow to run it perpetually
+- keep inout flexible
 
-def process_stocks(stock_input_file, vebose):
+"""
+def handler():
+    """
+
+    """
+    
+    # time table: zurich time for market closing 
+    market_times = {
+        'SWISS':'',
+        'NYC':'',
+
+
+    }
+
+def process_stocks(stock_input_file, verbose):
     """
     description:
         -x
@@ -29,8 +44,8 @@ def process_stocks(stock_input_file, vebose):
         -x 
     """
     stock_list =  open(stock_input_file,'r').read().split('\n')
-    for stock in stock_list:
-        x = fetch_stock(stock_id,verbose)
+    for stock_id in stock_list:
+        x = fetch_stock(stock_id, verbose)
 
 def fetch_stock(stock_id, verbose):
     """
