@@ -14,12 +14,27 @@ import shutil
 import os
 from lxml import etree
 from general_helpers import is_number, convert_cap_value
+import datetime
 
 """
 - handler function - referesh daily stock data every 24h at end of market
 - store history upon first starting progam - make it somehow to run it perpetually
 - keep inout flexible
 """
+
+def check_market_closing():
+    stock_exchange_closing_times = {
+        # Your stock exchange closing times dictionary here
+    }
+    exchange = "SIX Swiss Exchange"  # Example exchange, choose the one you're interested in
+    current_time = datetime.datetime.now(datetime.timezone.utc)
+    if current_time.weekday() < 5:  # Monday to Friday
+        closing_time = datetime.datetime.combine(current_time.date(), stock_exchange_closing_times[exchange]["daily_close"])
+    else:  # Weekend
+        closing_time = datetime.datetime.combine(current_time.date(), stock_exchange_closing_times[exchange]["weekend_close"])
+    
+    return current_time >= closing_time
+
 
 def handler():
     """
@@ -35,21 +50,55 @@ def handler():
 
     # read key information for all stocks that were requested
 
-
-    # time table: zurich time for market closing 
-    market_times = {
-        'SWISS':'',
-        'NYC':'',
-
-    }
-
-
     # fetch historic data for every stock
 
     # after historic data is stored, keep account of time and update historic data with current market data
     #while True:
     if True:
         pass
+
+
+
+def get_closing_time(market):
+    stock_exchange_closing_times = {
+    "New York Stock Exchange (NYSE)": {
+        "daily_close": datetime.time(21, 0),  # 4:00 PM Eastern Time
+        "weekend_close": datetime.time(21, 0),  # Friday close
+    },
+    "NASDAQ": {
+        "daily_close": datetime.time(21, 0),  # 4:00 PM Eastern Time
+        "weekend_close": datetime.time(21, 0),  # Friday close
+    },
+    "London Stock Exchange (LSE)": {
+        "daily_close": datetime.time(16, 30),  # 4:30 PM GMT
+        "weekend_close": datetime.time(16, 30),  # Friday close
+    },
+    "Tokyo Stock Exchange (TSE)": {
+        "daily_close": datetime.time(6, 0),  # 3:00 PM JST
+        "weekend_close": datetime.time(6, 0),  # Friday close
+    },
+    "Shanghai Stock Exchange (SSE)": {
+        "daily_close": datetime.time(7, 0),  # 3:00 PM CST
+        "weekend_close": datetime.time(7, 0),  # Friday close
+    },
+    "Hong Kong Stock Exchange (HKEX)": {
+        "daily_close": datetime.time(8, 0),  # 4:00 PM HKT
+        "weekend_close": datetime.time(8, 0),  # Friday close
+    },
+    "Frankfurt Stock Exchange (FWB)": {
+        "daily_close": datetime.time(20, 0),  # 8:00 PM CET
+        "weekend_close": datetime.time(20, 0),  # Friday close
+    },
+    "Toronto Stock Exchange (TSX)": {
+        "daily_close": datetime.time(21, 0),  # 4:00 PM Eastern Time
+        "weekend_close": datetime.time(21, 0),  # Friday close
+    },
+    "SIX Swiss Exchange": {
+        "daily_close": datetime.time(16, 30),  # 4:30 PM CET
+        "weekend_close": datetime.time(16, 30),  # Friday close
+    }
+    }
+
 
 def fetch_stock(stock_id, verbose):
     """
