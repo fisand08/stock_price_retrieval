@@ -50,10 +50,15 @@ def handler(verbose):
 
     # after historic data is stored, keep account of time and update historic data with current market data
     while True:
-        pass
+        for stock_id in stock_list:
+            # get market and closing time
+            market = df_stocks[df_stocks['STOCK_ID'] == stock_id].iloc[0]['MARKET']
+
+
     
 
-
+def get_closing_time():
+    pass
 
 def get_historic_data(stock_id, verbose):
     """
