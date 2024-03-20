@@ -22,21 +22,8 @@ import datetime
 - keep inout flexible
 """
 
-def check_market_closing():
-    stock_exchange_closing_times = {
-        # Your stock exchange closing times dictionary here
-    }
-    exchange = "SIX Swiss Exchange"  # Example exchange, choose the one you're interested in
-    current_time = datetime.datetime.now(datetime.timezone.utc)
-    if current_time.weekday() < 5:  # Monday to Friday
-        closing_time = datetime.datetime.combine(current_time.date(), stock_exchange_closing_times[exchange]["daily_close"])
-    else:  # Weekend
-        closing_time = datetime.datetime.combine(current_time.date(), stock_exchange_closing_times[exchange]["weekend_close"])
-    
-    return current_time >= closing_time
 
-
-def handler():
+def handler(verbose):
     """
     description:
         - function that is "alive" - schedules everything
@@ -48,79 +35,24 @@ def handler():
     # read inputs
     stock_list =  open(stock_input_file,'r').read().split('\n')
 
-    # read key information for all stocks that were requested
-
-    # fetch historic data for every stock
+    # read key information for all stocks that were requested, store history
+    df_stocks = pd.DataFrame()
+    for stock_id in stock_list:
+        full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
+        new_line = pd.DataFrame({
+            "STOCK_ID": [full_name],
+            "MARKET": [market],
+            "CURRENCY": [currency]
+        })
+        df_stocks = pd.concat([df_stocks,new_line], ignore_index=True)
+        df_history = get_historic_data(stock_id, verbose)
+        df_history.to_csv(  os.path.join(os.getcwd(),'stock_data',stock_id + '_history.csv'), index=False )
 
     # after historic data is stored, keep account of time and update historic data with current market data
-    #while True:
-    if True:
+    while True:
         pass
+    
 
-
-
-def get_closing_time(market):
-    stock_exchange_closing_times = {
-    "New York Stock Exchange (NYSE)": {
-        "daily_close": datetime.time(21, 0),  # 4:00 PM Eastern Time
-        "weekend_close": datetime.time(21, 0),  # Friday close
-    },
-    "NASDAQ": {
-        "daily_close": datetime.time(21, 0),  # 4:00 PM Eastern Time
-        "weekend_close": datetime.time(21, 0),  # Friday close
-    },
-    "London Stock Exchange (LSE)": {
-        "daily_close": datetime.time(16, 30),  # 4:30 PM GMT
-        "weekend_close": datetime.time(16, 30),  # Friday close
-    },
-    "Tokyo Stock Exchange (TSE)": {
-        "daily_close": datetime.time(6, 0),  # 3:00 PM JST
-        "weekend_close": datetime.time(6, 0),  # Friday close
-    },
-    "Shanghai Stock Exchange (SSE)": {
-        "daily_close": datetime.time(7, 0),  # 3:00 PM CST
-        "weekend_close": datetime.time(7, 0),  # Friday close
-    },
-    "Hong Kong Stock Exchange (HKEX)": {
-        "daily_close": datetime.time(8, 0),  # 4:00 PM HKT
-        "weekend_close": datetime.time(8, 0),  # Friday close
-    },
-    "Frankfurt Stock Exchange (FWB)": {
-        "daily_close": datetime.time(20, 0),  # 8:00 PM CET
-        "weekend_close": datetime.time(20, 0),  # Friday close
-    },
-    "Toronto Stock Exchange (TSX)": {
-        "daily_close": datetime.time(21, 0),  # 4:00 PM Eastern Time
-        "weekend_close": datetime.time(21, 0),  # Friday close
-    },
-    "SIX Swiss Exchange": {
-        "daily_close": datetime.time(16, 30),  # 4:30 PM CET
-        "weekend_close": datetime.time(16, 30),  # Friday close
-    }
-    }
-
-
-def fetch_stock(stock_id, verbose):
-    """
-    Description:
-        - stock data handler
-            - gets current and historic data for a stock
-    Inputs:
-        - stock id: str; identifier of stock at yahoo finance
-        - verbose: bool; flag if additional output is printed
-    Outputs:
-
-    """
-    print(f'\n*** processing stock {stock_id}***')
-    # historic data
-    df_history = get_historic_data(stock_id, verbose)
-    full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
-
-    if verbose:
-        print(df_history.head())
-        print(full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent)
-
-    return True
 
 
 def get_historic_data(stock_id, verbose):
