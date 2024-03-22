@@ -31,29 +31,31 @@ def handler(verbose):
     dev:
         - needs to be alive and read stock list (for the case new stocks are added to be observed - listener)
     """
-    
-    # read inputs
-    stock_list =  open(stock_input_file,'r').read().split('\n')
+    iteration = 0
+    collected_stocks = []
+    while iteration < 3: # iteration loop here because stock input might change over time - new stock of interest added
+        # read inputs
+        stock_list =  open(stock_input_file,'r').read().split('\n')
 
-    # read key information for all stocks that were requested, store history
-    df_stocks = pd.DataFrame()
-    for stock_id in stock_list:
-        full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
-        new_line = pd.DataFrame({
-            "STOCK_ID": [full_name],
-            "MARKET": [market],
-            "CURRENCY": [currency]
-        })
-        df_stocks = pd.concat([df_stocks,new_line], ignore_index=True)
-        df_history = get_historic_data(stock_id, verbose)
-        df_history.to_csv(  os.path.join(os.getcwd(),'stock_data',stock_id + '_history.csv'), index=False )
-
-    # after historic data is stored, keep account of time and update historic data with current market data
-    iteration=0
-    while iteration < 3: #while True:
+        # read key information for all stocks that were requested, store history
+        df_stocks = pd.DataFrame()
+        for stock_id in stock_list:
+            if not stock_id in collected_stocks:
+                # general data
+                full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
+                new_line = pd.DataFrame({
+                    "STOCK_ID": [full_name],
+                    "MARKET": [market],
+                    "CURRENCY": [currency]
+                })
+                df_stocks = pd.concat([df_stocks,new_line], ignore_index=True)
+                # historic data
+                df_history = get_historic_data(stock_id, verbose)
+                df_history.to_csv(  os.path.join(os.getcwd(),'stock_data',stock_id + '_history.csv'), index=False )
+                collected_stocks.append(stock_id)
+        # daily stock update
         current_time = datetime.now()  # get current swiss time
         current_day = current_time.day()
-        # perpetual loop over all stocks
         if not current_day in [5,6]:
             for stock_id in stock_list:
                 # get market and closing time
@@ -61,9 +63,9 @@ def handler(verbose):
                 closing_status = get_stock_exchange_closing_status(current_time,market)
                 if closing_status:
                     pass # fetch data
-            iteration=iteration + 1
-            time.sleep(1) #time.sleep(60)
-    
+        iteration=iteration + 1
+        time.sleep(1) #time.sleep(60)
+        stock_list.close()
 
 
 def get_stock_exchange_closing_status(zurich_time, market):
