@@ -14,7 +14,7 @@ import shutil
 import os
 from lxml import etree
 from general_helpers import is_number, convert_cap_value
-import datetime
+from datetime import datetime, timedelta
 
 """
 - handler function - referesh daily stock data every 24h at end of market
@@ -49,16 +49,66 @@ def handler(verbose):
         df_history.to_csv(  os.path.join(os.getcwd(),'stock_data',stock_id + '_history.csv'), index=False )
 
     # after historic data is stored, keep account of time and update historic data with current market data
-    while True:
-        for stock_id in stock_list:
-            # get market and closing time
-            market = df_stocks[df_stocks['STOCK_ID'] == stock_id].iloc[0]['MARKET']
-
-
+    iteration=0
+    while iteration < 3: #while True:
+        current_time = datetime.now()  # get current swiss time
+        current_day = current_time.day()
+        # perpetual loop over all stocks
+        if not current_day in [5,6]:
+            for stock_id in stock_list:
+                # get market and closing time
+                market = df_stocks[df_stocks['STOCK_ID'] == stock_id].iloc[0]['MARKET']
+                closing_status = get_stock_exchange_closing_status(current_time,market)
+                if closing_status:
+                    pass # fetch data
+            iteration=iteration + 1
+            time.sleep(1) #time.sleep(60)
     
 
-def get_closing_time():
-    pass
+
+def get_stock_exchange_closing_status(zurich_time, market):
+    """
+    description:
+        - function checks if stock market is closed
+    inputs:
+        - zurich_time: datetime obj.; current time in zurich
+        - market: str; id for the market
+    outputs:
+        - closing_status: bool; True if closed
+    dev:
+        - add shortcuts like NYSE, compatible with yahoo
+    """
+    closing_times = {
+        "SIX Swiss Exchange": zurich_time.replace(hour=17, minute=30, second=0),
+        "NYSE": zurich_time.replace(hour=22, minute=0, second=0),
+        "NASDAQ": zurich_time.replace(hour=22, minute=0, second=0),
+        "London Stock Exchange": zurich_time.replace(hour=18, minute=0, second=0),
+        "Tokyo Stock Exchange": zurich_time.replace(hour=4, minute=0, second=0) + timedelta(days=1),
+        "Hong Kong Stock Exchange": zurich_time.replace(hour=12, minute=0, second=0),
+        "Frankfurt Stock Exchange": zurich_time.replace(hour=18, minute=0, second=0),
+        "Toronto Stock Exchange": zurich_time.replace(hour=22, minute=0, second=0),
+        "Shanghai Stock Exchange": zurich_time.replace(hour=12, minute=0, second=0),
+        "Euronext Paris": zurich_time.replace(hour=18, minute=0, second=0),
+        "Australia Stock Exchange": zurich_time.replace(hour=7, minute=0, second=0) + timedelta(days=1),
+        "Bombay Stock Exchange": zurich_time.replace(hour=12, minute=30, second=0) + timedelta(days=1),
+        "BM&F Bovespa": zurich_time.replace(hour=21, minute=0, second=0),
+        "Moscow Exchange": zurich_time.replace(hour=16, minute=0, second=0),
+        "Korea Exchange": zurich_time.replace(hour=9, minute=0, second=0) + timedelta(days=1),
+        "Taiwan Stock Exchange": zurich_time.replace(hour=8, minute=30, second=0) + timedelta(days=1),
+        "Singapore Exchange": zurich_time.replace(hour=14, minute=0, second=0),
+        "São Paulo Stock Exchange": zurich_time.replace(hour=21, minute=0, second=0),
+        "National Stock Exchange of India": zurich_time.replace(hour=12, minute=30, second=0) + timedelta(days=1),
+        "Borsa Istanbul": zurich_time.replace(hour=18, minute=0, second=0),
+        "Mexican Stock Exchange": zurich_time.replace(hour=22, minute=0, second=0),
+        "Stock Exchange of Thailand": zurich_time.replace(hour=15, minute=30, second=0),
+    }
+    
+    if market in closing_times:
+        closing_time = closing_times[market]
+        return zurich_time >= closing_time
+    else:
+        print(f"{market} is not found in the list.")
+        return None
 
 def get_historic_data(stock_id, verbose):
     """
