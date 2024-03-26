@@ -23,7 +23,7 @@ from datetime import datetime, timedelta
 """
 
 
-def handler(verbose):
+def handler(verbose, stock_input_file):
     """
     description:
         - function that is "alive" - schedules everything
@@ -53,7 +53,7 @@ def handler(verbose):
                 df_history = get_historic_data(stock_id, verbose)
                 df_history.to_csv(  os.path.join(os.getcwd(),'stock_data',stock_id + '_history.csv'), index=False )
                 collected_stocks.append(stock_id)
-        # daily stock update
+        # daily stock update - new loop to not fetch historic data daily (error prone selenium routine)
         current_time = datetime.now()  # get current swiss time
         current_day = current_time.day()
         if not current_day in [5,6]:
@@ -62,7 +62,11 @@ def handler(verbose):
                 market = df_stocks[df_stocks['STOCK_ID'] == stock_id].iloc[0]['MARKET']
                 closing_status = get_stock_exchange_closing_status(current_time,market)
                 if closing_status:
-                    pass # fetch data
+                    full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose) # get stock data
+                    df_history = pd.read_csv(  os.path.join(os.getcwd(),'stock_data',stock_id + '_history.csv') ) # open historic dataframe
+                    # update dataframe with newest stock price, volume etc for current day in correct format
+
+                    
         iteration=iteration + 1
         time.sleep(1) #time.sleep(60)
         stock_list.close()
@@ -165,6 +169,7 @@ def get_current_data(stock_id,verbose):
         - uses requests and bs4 to get from yahoo finance summary:
             -up-to-date current stock information
             -general informaton on stock
+        - can be used to either retrieve general information on a stock or current data (e.g. price)
     
     inputs: 
         -stock_id: string; ID of the stock, e.g. NVS for novartis
