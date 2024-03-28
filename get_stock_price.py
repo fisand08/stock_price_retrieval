@@ -33,12 +33,13 @@ def handler(verbose, stock_input_file):
     """
     iteration = 0
     collected_stocks = []
+    df_stocks = pd.DataFrame(columns=['STOCK_ID','STOCK_NAME','MARKET','CURRENCY'])
+
     while iteration < 3: # iteration loop here because stock input might change over time - new stock of interest added
         # read inputs
         stock_list_file =  open(stock_input_file,'r')
         stock_list = [x.strip() for x in stock_list_file.read().split('\n')]
         # read key information for all stocks that were requested, store history
-        df_stocks = pd.DataFrame(columns=['STOCK_ID','STOCK_NAME','MARKET','CURRENCY'])
         for stock_id in stock_list:
             if not stock_id in collected_stocks:
                 # general data
