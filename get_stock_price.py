@@ -17,8 +17,6 @@ from general_helpers import is_number, convert_cap_value
 from datetime import datetime, timedelta
 
 """
-- dev: extend current data fetcher to cover all field that were also retrieved by historic data
-- make sure only new dates are added in data merge function
 """
 
 
@@ -26,10 +24,6 @@ def handler(verbose, stock_input_file):
     """
     description:
         - function that is "alive" - schedules everything
-    
-    dev:
-        - code to add current stock data to historic dataframe and resave it
-        - test and debug handler
     """
     iteration = 0
     collected_stocks = []
@@ -67,7 +61,8 @@ def handler(verbose, stock_input_file):
                 print(f'columns: {df_stocks.columns}')
                 print(f'Checking "{stock_id}"')
                 market = df_stocks[df_stocks['STOCK_ID'] == stock_id.strip()].iloc[0]['MARKET']
-                closing_status = get_stock_exchange_closing_status(current_time,market)
+                closing_times = read_stock_closing_time(os.path.join(os.getcwd(),'inputs','stock_markets_closing.csv'), current_time)
+                closing_status = get_stock_exchange_closing_status(current_time,market,closing_times)
                 if closing_status:
                     if verbose:
                         print(f'Retrieving data for stock_id {stock_id} because market closed')
@@ -106,7 +101,27 @@ def merge_current_data(df, prev_close, volume, current_price, date):
     df.loc[new_idx, 'Volume'] = volume
     return df
 
-def get_stock_exchange_closing_status(zurich_time, market):
+def read_stock_closing_time(stock_close_csv_path, current_time):
+    """
+    description:
+        - reads csv file with stock closing times in reference to zurich time
+    inputs:
+        - path to csv file
+    returns:
+        - dictionary with stock exchange closing times
+    """
+    df_c = pd.read_csv(stock_close_csv_path)
+    closing_times = {}
+    for j in df_c.index:
+        h, m, s, d = df_c.loc[j,'h'], df_c.loc[j,'m'], df_c.loc[j,'s'], df_c.loc[j,'d'] 
+        if d == 0:
+            closing_times.update( { df_c.loc[j,'MARKET_ID'] : current_time.replace(hour=h, minute=m, second=s)  } )        
+        else:
+            closing_times.update( { df_c.loc[j,'MARKET_ID'] : current_time.replace(hour=h, minute=m, second=s) + timedelta(days=float(d))  } )   
+    
+    return closing_times
+
+def get_stock_exchange_closing_status(zurich_time, market, closing_times):
     """
     description:
         - function checks if stock market is closed
@@ -118,44 +133,13 @@ def get_stock_exchange_closing_status(zurich_time, market):
     dev:
         - add shortcuts like NYSE, compatible with yahoo
     """
-    closing_times = {
-        "Swiss": zurich_time.replace(hour=17, minute=30, second=0),
-        "NYSE": zurich_time.replace(hour=22, minute=0, second=0),
-        "NASDAQ": zurich_time.replace(hour=22, minute=0, second=0),
-        "LSE": zurich_time.replace(hour=18, minute=0, second=0),
-        "XERTA":zurich_time.replace(hour=18, minute=0, second=0),
-        "NasdaqGS":zurich_time.replace(hour=22, minute=0, second=0),
-        "Cboe CA":zurich_time.replace(hour=22, minute=0, second=0),
-        "Amsterdam":zurich_time.replace(hour=16, minute=40, second=0),
-        "Mexico":zurich_time.replace(hour=22, minute=0, second=0),
-        "Frankfurt":zurich_time.replace(hour=18, minute=0, second=0),
-
-        "Tokyo Stock Exchange": zurich_time.replace(hour=4, minute=0, second=0) + timedelta(days=1),
-        "Hong Kong Stock Exchange": zurich_time.replace(hour=12, minute=0, second=0),
-        "Frankfurt Stock Exchange": zurich_time.replace(hour=18, minute=0, second=0),
-        "Toronto Stock Exchange": zurich_time.replace(hour=22, minute=0, second=0),
-        "Shanghai Stock Exchange": zurich_time.replace(hour=12, minute=0, second=0),
-        "Euronext Paris": zurich_time.replace(hour=18, minute=0, second=0),
-        "Australia Stock Exchange": zurich_time.replace(hour=7, minute=0, second=0) + timedelta(days=1),
-        "Bombay Stock Exchange": zurich_time.replace(hour=12, minute=30, second=0) + timedelta(days=1),
-        "BM&F Bovespa": zurich_time.replace(hour=21, minute=0, second=0),
-        "Moscow Exchange": zurich_time.replace(hour=16, minute=0, second=0),
-        "Korea Exchange": zurich_time.replace(hour=9, minute=0, second=0) + timedelta(days=1),
-        "Taiwan Stock Exchange": zurich_time.replace(hour=8, minute=30, second=0) + timedelta(days=1),
-        "Singapore Exchange": zurich_time.replace(hour=14, minute=0, second=0),
-        "São Paulo Stock Exchange": zurich_time.replace(hour=21, minute=0, second=0),
-        "National Stock Exchange of India": zurich_time.replace(hour=12, minute=30, second=0) + timedelta(days=1),
-        "Borsa Istanbul": zurich_time.replace(hour=18, minute=0, second=0),
-        "Mexican Stock Exchange": zurich_time.replace(hour=22, minute=0, second=0),
-        "Stock Exchange of Thailand": zurich_time.replace(hour=15, minute=30, second=0),
-    }
-    
     if market in closing_times:
         closing_time = closing_times[market]
         return zurich_time >= closing_time
     else:
         print(f"{market} is not found in the list.")
         return None
+
 
 def get_historic_data(stock_id, verbose):
     """
@@ -203,7 +187,7 @@ def get_historic_data(stock_id, verbose):
         df = pd.read_csv(data_url)
         #print(df.head())
     # remove unnessearcy columns
-    df = df.drop(['High','Low','Adj. Close'],axis=1)
+    df = df.drop(['High','Low','Adj Close'],axis=1)
     return df
 
 def get_current_data(stock_id,verbose):

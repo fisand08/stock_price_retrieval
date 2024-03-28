@@ -1,0 +1,26 @@
+﻿MARKET_ID,MARKET_NAME,h,m,s,d
+Swiss,Swiss SIX stock exchange,17,30,0,0
+NYSE,New york stock exchange,22,0,0,0
+NASDAQ,NASDAQ,22,0,0,0
+NasdaqGS,NASDAQ,22,0,0,0
+LSE,London stock exchange,18,0,0,0
+Cboe CA,Toronto Stock exchange,22,0,0,0
+Amsterdam,Amsterdam Euronext,16,40,0,0
+MEX,Mexico Stock exchange,22,0,0,0
+Mexico,Mexico Stock exchange,22,0,0,0
+Frankfurt,Frankfurt Stock exchange,18,0,0,0
+nan,Tokyo Stock Exchange,4,0,0,1
+nan,Hong Kong Stock Exchange,12,0,0,0
+nan,Shanghai Stock Exchange,12,0,0,0
+nan,Euronext Paris,18,0,0,0
+nan,Australia stock exchange,7,0,0,1
+nan,Bombay stock exchange,12,30,0,1
+nan,BM&F Bovespa,21,0,0,0
+nan,Moscow exchange,16,0,0,0
+nan,Korea Exchange,9,0,0,1
+nan,Taiwan stock exchange,8,30,0,1
+nan,singapore stock exchange,14,0,0,0
+nan,Sao Paulo exchange,14,0,0,0
+nan,National stock exchange india,12,30,0,1
+nan,Borsa Istanbul,18,0,0,0
+nan,Stock exchange of Thailand,15,30,0,0
