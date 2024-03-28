@@ -17,9 +17,8 @@ from general_helpers import is_number, convert_cap_value
 from datetime import datetime, timedelta
 
 """
-- handler function - referesh daily stock data every 24h at end of market
-- store history upon first starting progam - make it somehow to run it perpetually
-- keep inout flexible
+- dev: extend current data fetcher to cover all field that were also retrieved by historic data
+- make sure only new dates are added in data merge function
 """
 
 
@@ -29,24 +28,26 @@ def handler(verbose, stock_input_file):
         - function that is "alive" - schedules everything
     
     dev:
-        - needs to be alive and read stock list (for the case new stocks are added to be observed - listener)
+        - code to add current stock data to historic dataframe and resave it
+        - test and debug handler
     """
     iteration = 0
     collected_stocks = []
     while iteration < 3: # iteration loop here because stock input might change over time - new stock of interest added
         # read inputs
-        stock_list =  open(stock_input_file,'r').read().split('\n')
-
+        stock_list_file =  open(stock_input_file,'r')
+        stock_list = [x.strip() for x in stock_list_file.read().split('\n')]
         # read key information for all stocks that were requested, store history
-        df_stocks = pd.DataFrame()
+        df_stocks = pd.DataFrame(columns=['STOCK_ID','STOCK_NAME','MARKET','CURRENCY'])
         for stock_id in stock_list:
             if not stock_id in collected_stocks:
                 # general data
                 full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
                 new_line = pd.DataFrame({
-                    "STOCK_ID": [full_name],
-                    "MARKET": [market],
-                    "CURRENCY": [currency]
+                    "STOCK_ID":[stock_id.strip()],
+                    "STOCK_NAME": [full_name.strip()],
+                    "MARKET": [market.strip()],
+                    "CURRENCY": [currency.strip()]
                 })
                 df_stocks = pd.concat([df_stocks,new_line], ignore_index=True)
                 # historic data
@@ -55,22 +56,54 @@ def handler(verbose, stock_input_file):
                 collected_stocks.append(stock_id)
         # daily stock update - new loop to not fetch historic data daily (error prone selenium routine)
         current_time = datetime.now()  # get current swiss time
-        current_day = current_time.day()
+
+        print(f'current time b: {current_time}')
+        print(df_stocks)
+        current_day = current_time.day
         if not current_day in [5,6]:
             for stock_id in stock_list:
                 # get market and closing time
-                market = df_stocks[df_stocks['STOCK_ID'] == stock_id].iloc[0]['MARKET']
+                print(f'columns: {df_stocks.columns}')
+                print(f'Checking "{stock_id}"')
+                market = df_stocks[df_stocks['STOCK_ID'] == stock_id.strip()].iloc[0]['MARKET']
                 closing_status = get_stock_exchange_closing_status(current_time,market)
                 if closing_status:
+                    if verbose:
+                        print(f'Retrieving data for stock_id {stock_id} because market closed')
                     full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose) # get stock data
-                    df_history = pd.read_csv(  os.path.join(os.getcwd(),'stock_data',stock_id + '_history.csv') ) # open historic dataframe
-                    # update dataframe with newest stock price, volume etc for current day in correct format
+                    history_path = os.path.join(os.getcwd(),'stock_data',stock_id + '_history.csv')
+                    df_history = pd.read_csv(  history_path ) # open historic dataframe
+                    date = current_time.strftime("%Y-%m-%d") # format date from current time
+                    if not df_history.iloc[-1]['Date'] == date:
+                        print(f'Current date {date} not yet found in history, so update it...')
+                        df_history = merge_current_data(df_history, prev_close, volume, current_price, date)
+                        df_history.to_csv(history_path, index=False)
+                    else:
+                        print(f'Current date {date} already found in data, ignoring...')
 
                     
         iteration=iteration + 1
         time.sleep(1) #time.sleep(60)
-        stock_list.close()
+        stock_list_file.close()
 
+
+def merge_current_data(df, prev_close, volume, current_price, date):
+    """
+    description:
+        - updates historic dataframe with new data
+    inputs:
+        - df_history: pd.DataFrame; historic data
+        - prev_close: float; previous closing of market
+        - volume: float; market volume
+        - current_prie: float; price (after closing because called after market close)
+        - date: ?; current date
+    """
+    new_idx = df.index[-1] + 1
+    df.loc[new_idx, 'Date'] = date
+    df.loc[new_idx, 'Open'] = prev_close
+    df.loc[new_idx, 'Close'] = current_price
+    df.loc[new_idx, 'Volume'] = volume
+    return df
 
 def get_stock_exchange_closing_status(zurich_time, market):
     """
@@ -85,7 +118,7 @@ def get_stock_exchange_closing_status(zurich_time, market):
         - add shortcuts like NYSE, compatible with yahoo
     """
     closing_times = {
-        "SIX Swiss Exchange": zurich_time.replace(hour=17, minute=30, second=0),
+        "Swiss": zurich_time.replace(hour=17, minute=30, second=0),
         "NYSE": zurich_time.replace(hour=22, minute=0, second=0),
         "NASDAQ": zurich_time.replace(hour=22, minute=0, second=0),
         "London Stock Exchange": zurich_time.replace(hour=18, minute=0, second=0),
