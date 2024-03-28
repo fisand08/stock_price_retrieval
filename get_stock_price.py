@@ -122,7 +122,14 @@ def get_stock_exchange_closing_status(zurich_time, market):
         "Swiss": zurich_time.replace(hour=17, minute=30, second=0),
         "NYSE": zurich_time.replace(hour=22, minute=0, second=0),
         "NASDAQ": zurich_time.replace(hour=22, minute=0, second=0),
-        "London Stock Exchange": zurich_time.replace(hour=18, minute=0, second=0),
+        "LSE": zurich_time.replace(hour=18, minute=0, second=0),
+        "XERTA":zurich_time.replace(hour=18, minute=0, second=0),
+        "NasdaqGS":zurich_time.replace(hour=22, minute=0, second=0),
+        "Cboe CA":zurich_time.replace(hour=22, minute=0, second=0),
+        "Amsterdam":zurich_time.replace(hour=16, minute=40, second=0),
+        "Mexico":zurich_time.replace(hour=22, minute=0, second=0),
+        "Frankfurt":zurich_time.replace(hour=18, minute=0, second=0),
+
         "Tokyo Stock Exchange": zurich_time.replace(hour=4, minute=0, second=0) + timedelta(days=1),
         "Hong Kong Stock Exchange": zurich_time.replace(hour=12, minute=0, second=0),
         "Frankfurt Stock Exchange": zurich_time.replace(hour=18, minute=0, second=0),
@@ -195,6 +202,8 @@ def get_historic_data(stock_id, verbose):
         #print(f'Reading data url: {data_url}')
         df = pd.read_csv(data_url)
         #print(df.head())
+    # remove unnessearcy columns
+    df = df.drop(['High','Low','Adj. Close'],axis=1)
     return df
 
 def get_current_data(stock_id,verbose):
