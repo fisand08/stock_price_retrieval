@@ -10,7 +10,6 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import time
-import shutil
 import os
 from lxml import etree
 from general_helpers import is_number, convert_cap_value
