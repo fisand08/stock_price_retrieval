@@ -32,6 +32,7 @@ Script to retrieve and maintain an archive of stock data. Designed to run on ser
 
 Call handler function in python code with path to input file with stock names. "verbose" is a boolean to print certain information to command line
 ```
+from get_stock_price import handler
 handler(verbose, stock_input_file)
 ```
 
