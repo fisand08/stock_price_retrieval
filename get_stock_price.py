@@ -37,7 +37,10 @@ def handler(verbose, stock_input_file):
         for stock_id in stock_list:
             if not stock_id in collected_stocks:
                 # general data
-                full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
+                #full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_data(stock_id, verbose)
+                full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent = get_current_new(stock_id, verbose)
+
+                
                 new_line = pd.DataFrame({
                     "STOCK_ID":[stock_id.strip()],
                     "STOCK_NAME": [full_name.strip()],
@@ -160,21 +163,55 @@ def get_historic_data(stock_id, verbose):
     driver.get(url)
     
     # Press button
+    print('*** Clicking away annoying pop-ups ***')
     try:
-        time.sleep(1)
-        buttons = driver.find_elements(By.TAG_NAME,'button')[0].click()
+        buttons = driver.find_elements(By.TAG_NAME,'button')[:3]
+        for en, button in enumerate(buttons):
+            print(f'button {en}')
+            #print(button.text)
+            button.click()
+            time.sleep(0.5)
     except Exception as e:
         if verbose:
+            print('button failed')
             if not 'element not interactable' in str(e): # only print if not typical error
                 print(f'ERROR: ({e})')
         
     # Add all time
-    dropdown_block = driver.find_element(By.XPATH,'//div[@class="M(0) O(n):f D(ib) Bd(0) dateRangeBtn O(n):f Pos(r)"]')
-    divs = dropdown_block.find_elements(By.TAG_NAME,'div')
-    for d in divs:
-        d.click()
+    print('*** Clicking the time dropdown menu ***')
 
-    WebDriverWait(driver,10).until(EC.element_to_be_clickable((By.XPATH, '//button[@data-value="MAX"]'))).click()
+    
+    try:
+        dropdown_block = driver.find_element(By.XPATH,'//div[@class="M(0) O(n):f D(ib) Bd(0) dateRangeBtn O(n):f Pos(r)"]')
+        print('dropdown block A')
+        print(dropdown_block)
+        print(dropdown_block.text)
+    except:
+        dropdown_block = driver.find_element(By.XPATH,'//div[@class="menuContainer  svelte-1j5x891"]')
+        print('dropdown block B')
+        print(dropdown_block)
+        print(dropdown_block.text)
+    
+    divs = dropdown_block.find_elements(By.TAG_NAME,'div')
+    bus = dropdown_block.find_elements(By.TAG_NAME,'button')
+    for d in divs:
+        try:
+            d.click()
+        except:
+            pass
+         
+    for b in bus:
+        b.click()
+    print('*** Clicking on "Max" to get all time data ***')
+    try:
+        WebDriverWait(driver,10).until(EC.element_to_be_clickable((By.XPATH, '//button[@data-value="MAX"]'))).click()
+    except:
+        WebDriverWait(driver,10).until(EC.element_to_be_clickable((By.XPATH, '//button[@value="MAX"]'))).click()
+
+
+
+    
+    print('*** Locating download link ***')
     time.sleep(0.5)
     hyperlinks = driver.find_elements(By.TAG_NAME, 'a')
     for l in hyperlinks:
@@ -182,13 +219,70 @@ def get_historic_data(stock_id, verbose):
         if 'download' in l_text and 'history' in l_text and 'query' in l_text:
             data_url = str(l_text)
             #print(f' dataframe: {data_url}')
+    print('*** Retrieving data ***')
     if data_url:
         #print(f'Reading data url: {data_url}')
         df = pd.read_csv(data_url)
-        #print(df.head())
+        print(df.head(2))
     # remove unnessearcy columns
     df = df.drop(['High','Low','Adj Close'],axis=1)
+    print('*** Found the data ***')
+    #print(df.head(2))
     return df
+
+
+def get_current_new(stock_id,vebose):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+    url = f'https://finance.yahoo.com/quote/{stock_id}/?p={stock_id}'
+    r = requests.get(url, allow_redirects=True, headers = headers)
+    print(f'Status {r.status_code}')
+    if r.status_code == 200:
+        out_dict = {}
+        soup = BeautifulSoup(r.text,"html.parser")
+
+        full_name = soup.find('h1', class_='svelte-ufs8hf').text
+        if '(' in full_name:
+            full_name = full_name.split('(')[0]
+        out_dict.update({'full_name':full_name})
+
+        exchange_block = soup.find('div', class_="top svelte-1wa6nl7").text
+        market = exchange_block.split('-')[0].strip()
+        out_dict.update({'market':market})
+        
+        currency = exchange_block.split(full_name)[0].split('Quote')[1].replace('•','').strip()
+        out_dict.update({'curency':currency})
+
+        main_table = soup.find('div', attrs = {'data-testid':"quote-statistics"})  
+        volume = main_table.find('fin-streamer',attrs={"data-field":'regularMarketVolume'}).text.replace(',','')
+        out_dict.update({'volume':float(volume)})
+
+        prev_close = main_table.find('fin-streamer',attrs = {"data-field":'regularMarketPreviousClose'}).text
+        out_dict.update({'prev_close':float(prev_close)})
+
+        curr_price = soup.find('fin-streamer', {'data-field':'regularMarketPrice'}).text
+        
+        out_dict.update({'curr_price':float(curr_price)})
+        market_cap = main_table.find('fin-streamer', {'data-field':'marketCap'}).text
+        if 'B' in maket_cap:
+            market_cap = market_cap.replace('B','')
+            market_cap = float(market_cap) * (10**9)
+        if 'T' in market_cap:
+            market_cap = market_cap.replace('T','')
+            market_cap = float(market_cap) * (10**12)
+        out_dict.update({'market_cap':float(market_cap)})
+        
+        tab_fields = main_table.find_all('span', class_="value svelte-tx3nkj")
+        for en, f in enumerate(tab_fields):
+            #print(f.text)
+            if '%' in f.text and '(' in f.text:
+                divi = f.text
+                divi_abs = divi.split()[0]
+                divi_p = divi.split()[1].replace('(','').replace(')','').replace('%','')
+                out_dict.update({'divi_abs':divi_abs})
+                out_dict.update({'divi_p':divi_p})
+    print(out_dict)
+
+    return full_name, market, currency, curr_price, prev_close, volume, market_cap, divi_abs, divi_p
 
 def get_current_data(stock_id,verbose):
     """
@@ -213,7 +307,11 @@ def get_current_data(stock_id,verbose):
     if verbose:
         print(f'*** retrieving current stock data from {url}')
     full_name, currency, current_price, volume, market_cap, prev_close, market, dividend_value, dividend_percent = np.nan, np.nan, np.nan, np.nan, np.nan,np.nan,np.nan,np.nan,np.nan
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+
+    #r = requests.get(url, allow_redirects = True, headers=headers)
     r = requests.get(url)
+    
     if verbose:
         print(f'Status:{r.status_code}')
     if r.status_code == 200:
@@ -271,5 +369,5 @@ def get_current_data(stock_id,verbose):
                     dividend_value = float(d1)
                 if is_number(d2[:-1]) and '%' in d2:
                     dividend_percent = float(d2[:-1])
-
+        
     return full_name, market, currency, current_price, prev_close, volume, market_cap, dividend_value, dividend_percent
