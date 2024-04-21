@@ -80,7 +80,7 @@ def handler(verbose, stock_input_file):
                     else:
                         print(f'Current date {date} already found in data, ignoring...')
 
-                    
+        df_stocks.to_csv('stocks_db.csv',index=False)
         iteration=iteration + 1
         time.sleep(1) #time.sleep(60)
         stock_list_file.close()
@@ -232,11 +232,32 @@ def get_historic_data(stock_id, verbose):
 
 
 def get_current_new(stock_id,vebose):
+    """
+    description:
+        - uses requests and bs4 to get from yahoo finance summary:
+            -up-to-date current stock information
+            -general informaton on stock
+        - can be used to either retrieve general information on a stock or current data (e.g. price)
+    
+    inputs: 
+        -stock_id: string; ID of the stock, e.g. NVS for novartis
+        -verbose: bool; if additional information is printed
+
+    outputs:
+        -currency: string; currency in which the stock is traded in
+        -full_name: string; full name of the stock
+        -current_price: float; current price of the stock
+        -volume: float; current volume of the stock
+        -market_cap: float; current market cap of the stock
+    """
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
     url = f'https://finance.yahoo.com/quote/{stock_id}/?p={stock_id}'
     r = requests.get(url, allow_redirects=True, headers = headers)
+    print(f'Visiting {url}')
     print(f'Status {r.status_code}')
     if r.status_code == 200:
+        full_name, currency, curr_price, volume, market_cap, prev_close, market, divi_abs, divi_p = np.nan, np.nan, np.nan, np.nan, np.nan,np.nan,np.nan,np.nan,np.nan
+
         out_dict = {}
         soup = BeautifulSoup(r.text,"html.parser")
 
@@ -256,17 +277,17 @@ def get_current_new(stock_id,vebose):
         volume = main_table.find('fin-streamer',attrs={"data-field":'regularMarketVolume'}).text.replace(',','')
         out_dict.update({'volume':float(volume)})
 
-        prev_close = main_table.find('fin-streamer',attrs = {"data-field":'regularMarketPreviousClose'}).text
+        prev_close = main_table.find('fin-streamer',attrs = {"data-field":'regularMarketPreviousClose'}).text.replace(',','')
         out_dict.update({'prev_close':float(prev_close)})
 
-        curr_price = soup.find('fin-streamer', {'data-field':'regularMarketPrice'}).text
+        curr_price = soup.find('fin-streamer', {'data-field':'regularMarketPrice'}).text.replace(',','')
         
         out_dict.update({'curr_price':float(curr_price)})
         market_cap = main_table.find('fin-streamer', {'data-field':'marketCap'}).text
-        if 'B' in maket_cap:
+        if 'B' in market_cap:
             market_cap = market_cap.replace('B','')
             market_cap = float(market_cap) * (10**9)
-        if 'T' in market_cap:
+        if 'T' in str(market_cap):
             market_cap = market_cap.replace('T','')
             market_cap = float(market_cap) * (10**12)
         out_dict.update({'market_cap':float(market_cap)})

@@ -1,4 +1,2 @@
-NOV.DE
-NVDA
-BYG.F
 AZN.L
+TSLA
