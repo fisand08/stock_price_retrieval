@@ -50,6 +50,7 @@ def handler(verbose, stock_input_file):
                 df_stocks = pd.concat([df_stocks,new_line], ignore_index=True)
                 # historic data
                 df_history = get_historic_data(stock_id, verbose)
+                df_history = add_weekend_rows(df_history)
                 df_history.to_csv(  os.path.join(os.getcwd(),'stock_data',stock_id + '_history.csv'), index=False )
                 collected_stocks.append(stock_id)
         # daily stock update - new loop to not fetch historic data daily (error prone selenium routine)
@@ -215,7 +216,10 @@ def get_historic_data(stock_id, verbose):
     time.sleep(0.5)
     hyperlinks = driver.find_elements(By.TAG_NAME, 'a')
     for l in hyperlinks:
-        l_text = l.get_attribute('href')
+        try:
+            l_text = l.get_attribute('href')
+        except:
+            pass
         if 'download' in l_text and 'history' in l_text and 'query' in l_text:
             data_url = str(l_text)
             #print(f' dataframe: {data_url}')
@@ -230,6 +234,28 @@ def get_historic_data(stock_id, verbose):
     #print(df.head(2))
     return df
 
+
+def add_weekend_rows(df):
+    date_format = '%Y-%m-%d'
+    new_rows = []
+    # convert dates 
+    for j in df.index:
+        date_object = datetime.strptime(str(df.loc[j,'Date']), date_format)
+        df.loc[j,'Date_2'] = date_object
+        if date_object.weekday() == 4:
+            saturday = date_object + timedelta(days=1)
+            sunday = date_object + timedelta(days=2)
+            new_rows.append({'Date':saturday.strftime('%Y-%m-%d'),  'Date_2': saturday, 'Open': df.loc[j,'Open'], 'Close': df.loc[j,'Close'], 'Volume': df.loc[j,'Volume']})
+            new_rows.append({'Date':sunday.strftime('%Y-%m-%d'),  'Date_2': sunday, 'Open': df.loc[j,'Open'], 'Close': df.loc[j,'Close'], 'Volume': df.loc[j,'Volume']})
+    # Convert new_rows to DataFrame
+    new_rows_df = pd.DataFrame(new_rows)
+    
+    # Concatenate the original df with the new_rows_df and sort by date
+    df = pd.concat([df, new_rows_df], ignore_index=True)
+    df = df.sort_values(by='Date_2').reset_index(drop=True)
+    
+    return df
+    
 
 def get_current_new(stock_id,vebose):
     """
@@ -261,18 +287,32 @@ def get_current_new(stock_id,vebose):
         out_dict = {}
         soup = BeautifulSoup(r.text,"html.parser")
 
-        full_name = soup.find('h1', class_='svelte-ufs8hf').text
-        if '(' in full_name:
-            full_name = full_name.split('(')[0]
+        # Read Full name
+        try:
+            name_block = soup.find('h1', class_='svelte-3a2v0c').text
+            print(name_block)
+        except:
+            pass
+        if '(' in name_block:
+            full_name = name_block.split('(')[0].strip()
         out_dict.update({'full_name':full_name})
 
-        exchange_block = soup.find('div', class_="top svelte-1wa6nl7").text
+        # Read Market and currency
+        try:
+            exchange_block = soup.find('span', class_='exchange svelte-1fo0o81').text
+            print(exchange_block)
+        except:
+            pass
         market = exchange_block.split('-')[0].strip()
         out_dict.update({'market':market})
-        
-        currency = exchange_block.split(full_name)[0].split('Quote')[1].replace('•','').strip()
-        out_dict.update({'curency':currency})
 
+        for cu in ['USD','CHF','EUR','GBP','JPY','CAD','SEK','HUF','MYR','RUB','PHP','MXN','INR','INR','IDR','ZAR']:
+            if cu in exchange_block.upper():
+                currency = cu
+        out_dict.update({'curency':currency})
+        print(out_dict)
+        
+        
         main_table = soup.find('div', attrs = {'data-testid':"quote-statistics"})  
         volume = main_table.find('fin-streamer',attrs={"data-field":'regularMarketVolume'}).text.replace(',','')
         out_dict.update({'volume':float(volume)})

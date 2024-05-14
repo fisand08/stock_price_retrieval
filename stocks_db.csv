@@ -1,0 +1,16 @@
+STOCK_ID,STOCK_NAME,MARKET,CURRENCY
+NVS,Novartis AG,NYSE,USD
+ROG.SW,Roche Holding AG,Swiss,CHF
+TSLA,"Tesla, Inc.",NasdaqGS,USD
+AAPL,Apple Inc.,NasdaqGS,USD
+NOV.DE,Novo Nordisk A/S,XETRA,EUR
+NVDA,NVIDIA Corporation,NasdaqGS,USD
+BYG.F,Bouygues SA,Frankfurt,EUR
+AZN.L,AstraZeneca PLC,LSE,GBP
+PFE,Pfizer Inc.,NYSE,USD
+MRK,"Merck & Co., Inc.",NYSE,USD
+MRK.DE,Merck KGaA,XETRA,EUR
+ABBV,AbbVie Inc.,NYSE,USD
+SNY,Sanofi,NasdaqGS,USD
+LLY,Eli Lilly and Company,NYSE,USD
+AMGN,Amgen Inc.,NasdaqGS,USD
